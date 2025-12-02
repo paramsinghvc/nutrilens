@@ -1,0 +1,31 @@
+# Dockerfile.server
+
+# Step 1: Build stage
+FROM node:20-alpine AS builder
+WORKDIR /server
+
+# Copy package files and install deps (includes dev deps for build)
+COPY server/package*.json ./
+RUN npm install --frozen-lockfile
+
+# Copy the rest of the source code
+COPY server/ .
+
+# Compile TypeScript → JavaScript (outputs to /server/dist)
+RUN npm run build
+
+
+# Step 2: Production stage (smaller, optimized)
+FROM node:20-alpine AS production
+WORKDIR /server
+ENV NODE_ENV=production
+
+# Copy only necessary files from builder
+COPY --from=builder /server/package*.json ./
+RUN npm install --omit=dev --frozen-lockfile
+
+# Copy built code and any runtime assets (e.g., views, public)
+COPY --from=builder /server/dist ./dist
+
+EXPOSE 8083
+CMD ["npm", "start"]

@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: nextjs-app
+    ports:
+      - "8087:8087"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: express-server
+    ports:
+      - "8083:8083"
+    env_file:
+      - server/.env
+    environment:
+      - NODE_ENV=production
