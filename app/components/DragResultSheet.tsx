@@ -27,6 +27,7 @@ const DragResultSheet: FC<{ apiResponse: NutritionResponse }> = ({
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
+  const [dragEnabled, setDragEnabled] = useState(true);
   const [dragBounds, setDragBounds] = useState(() => {
     if (typeof window === 'undefined') return { top: 0, bottom: 0 };
     const height = window.innerHeight;
@@ -59,6 +60,20 @@ const DragResultSheet: FC<{ apiResponse: NutritionResponse }> = ({
     }
   };
 
+  // 🔥 Listen to scroll inside the sheet
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const atTop = el.scrollTop <= 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
+      // enable drag only when near the top
+      setDragEnabled(atTop || atBottom);
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
   if (data.error)
     return (
       <div role="alert" className="p-4 text-sm rounded-xl">
@@ -86,13 +101,13 @@ const DragResultSheet: FC<{ apiResponse: NutritionResponse }> = ({
     <motion.section
       ref={sheetRef}
       style={{ y }}
-      drag="y"
+      drag={dragEnabled ? 'y' : false}
       dragConstraints={dragBounds}
       onDragEnd={handleDragEnd}
       dragElastic={0.2}
-      className="absolute w-full h-dvh bottom-0 bg-white rounded-t-3xl flex flex-col items-center px-10 pt-2 pb-20 z-2 text-black overflow-y-auto"
+      className="absolute w-full h-dvh bottom-0 bg-white rounded-t-3xl flex flex-col items-center px-10 pt-2 pb-20 z-2 text-black overflow-y-auto touch-pan-y"
     >
-      <div className="w-[100px] h-[5px] bg-gray-200 rounded-sm"></div>
+      <div className="w-[100px] h-[5px] bg-gray-200 rounded-sm absolute"></div>
       <section className="flex flex-col items-start w-full pt-10 gap-8">
         <InfoSection title="Identified items">
           <div className="flex flex-wrap gap-4">
